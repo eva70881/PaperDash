@@ -1,67 +1,125 @@
 # PaperDash
 
-PaperDash is a custom Linux kernel driver for SPI-based e-paper displays, designed to work with Raspberry Pi Zero and Waveshare's 7.5-inch e-paper display. The project consists of:
-- An **Out-of-Tree (OOB) kernel driver** for handling SPI communication.
-- A **daemon** that provides a user-space interface for displaying information such as datetime and weather updates.
+**PaperDash** is a Python-based e-Paper dashboard for Raspberry Pi Zero WH with a Waveshare 7.5" e-Paper V2 display.  
+It shows:
 
-## Project Structure
+- 📡 IP Address
+- 🕒 Date & Time
+- 🌤️ Current weather
+- 📈 Live stock prices (NVDA, DELL, etc.)
+- 🖼️ A custom BMP logo
+
+All content is updated using partial refresh to minimize flicker and power use.
+
+---
+
+## 🧰 Features
+
+- Partial refresh display (no flicker)
+- Realtime IP + clock (auto updates)
+- Weather from [Open-Meteo](https://open-meteo.com/)
+- Stock prices via Yahoo Finance API
+- Configurable symbols, intervals, logo path via `config.json`
+- Centered & aligned monospace layout
+- Graceful exit with `Ctrl+C` → auto-sleep
+
+---
+
+## 🖥️ Hardware Requirements
+
+![PaperDash_Hardware](paperdash_hw.jpeg)
+
+- Raspberry Pi Zero WH (or any Pi with SPI)
+- Waveshare 7.5" e-Paper Display V2 (black & white)
+- BMP logo (suggested size ≤ 400×200)
+- Internet connection (Wi-Fi or LAN)
+
+---
+
+## 📦 Project Structure
+
 ```
 PaperDash/
-├── driver/       # Kernel module (OOB driver)
-│   ├── paperdash.c
-│   ├── paperdash.h
-│   ├── Makefile
-│   ├── Kbuild
-│
-├── daemon/       # User-space daemon
-│   ├── paperdashd.c
-│   ├── Makefile
+├── paperdash.py           # Main loop
+├── epd/
+│   └── epd7in5_V2.py      # Waveshare driver
+├── modules/
+│   ├── config.py
+│   ├── weather.py
+│   ├── stocks.py
+│   ├── network.py
+│   └── clock.py
+├── assets/
 │   ├── config.json
-│
-├── README.md
+│   └── logo.bmp
+└── README.md
 ```
 
-## Requirements
-- Raspberry Pi Zero
-- Waveshare 7.5-inch SPI e-paper display
-- Linux kernel with SPI support enabled
-- GCC toolchain for compiling kernel modules
+---
 
-## Building & Installing the Kernel Driver
-1. **Enable SPI on Raspberry Pi**
-   ```sh
-   sudo raspi-config   # Enable SPI under 'Interfacing Options'
-   sudo reboot
-   ```
-2. **Compile and Load the Kernel Module**
-   ```sh
-   cd driver
-   make
-   sudo insmod paperdash.ko
-   dmesg | tail -n 10  # Verify module is loaded
-   ```
-3. **Unload the Module** (if needed)
-   ```sh
-   sudo rmmod paperdash
-   ```
+## ⚙️ Configuration (`assets/config.json`)
 
-## Running the Daemon
-1. **Compile the daemon**
-   ```sh
-   cd daemon
-   make
-   ```
-2. **Start the daemon**
-   ```sh
-   sudo ./paperdashd
-   ```
+```json
+{
+  "weather_update_interval": 5,
+  "stock_update_interval": 5,
+  "logo_path": "assets/logo.bmp",
+  "stocks": ["NVDA", "DELL", "TSM", "GOOGL"]
+}
+```
 
-## TODO
-- Implement SPI communication in the driver
-- Support basic display commands (clear screen, draw text/images)
-- Add weather and datetime display functionality
-- Optimize power consumption
+- Units: minutes
+- Logo must be BMP format (1-bit or grayscale)
+- Stock symbols must exist on Yahoo Finance
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+---
+
+## 🛠️ Installation
+
+```bash
+sudo apt update
+sudo apt install python3-pip python3-pil python3-requests
+```
+
+Clone your repo:
+
+```bash
+git clone https://github.com/yourname/PaperDash.git
+cd PaperDash
+```
+
+---
+
+## 🖼️ Setting Up Waveshare Driver
+
+- Download the official Python drivers from [Waveshare GitHub](https://github.com/waveshare/e-Paper)
+- Copy `epd7in5_V2.py` into `epd/` folder
+
+---
+
+## 🚀 Run It
+
+```bash
+python3 paperdash.py
+```
+
+- Auto-refreshes every 10s
+- Ctrl+C to exit → enters deep sleep
+
+---
+
+## 📜 License
+
+MIT License  
+Copyright (c) 2025  
+See [LICENSE](LICENSE) for details.
+
+---
+
+## 👥 Credits
+
+This project was designed and implemented collaboratively by  
+**Edward Lin** and **ChatGPT (OpenAI)** in 2025.
+
+All code was written from scratch and iteratively refined through interactive development, testing, and hardware validation.
 

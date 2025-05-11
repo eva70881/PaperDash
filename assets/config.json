@@ -1,0 +1,13 @@
+{
+  "weather_update_interval": 5,
+  "stock_update_interval": 5,
+  "logo_path": "assets/logo.bmp",
+
+  "stocks": [
+    "NVDA",
+    "DELL",
+    "TSM",
+    "GOOGL"
+  ]
+}
+

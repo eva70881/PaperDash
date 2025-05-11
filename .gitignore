@@ -1,32 +1,44 @@
-# Prerequisites
-*.d
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Virtual environment
+.venv/
+env/
+venv/
 
-# Precompiled Headers
-*.gch
-*.pch
+# Editor & system files
+.DS_Store
+*.swp
+*.swo
+*.bak
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Logs & temporary
+*.log
+*.tmp
 
-# Fortran module files
-*.mod
-*.smod
+# Pillow font cache (optional)
+*.cache
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Waveshare drivers (optional, not tracked)
+epd/*_test.py
+epd/__pycache__/
 
-# Executables
-*.exe
-*.out
-*.app
+# Personal settings
+*.ini
+*.local
+
+# Data & image files (optional - keep assets/ manually)
+*.bmp
+*.jpg
+*.png
+
+# Ignore config backups or alt configs
+assets/*.backup.json
+assets/*_old.json
+
+# IP or secret files (optional, just in case)
+secrets.json
+api_keys.json
+
