@@ -36,6 +36,22 @@ All content is updated using partial refresh to minimize flicker and power use.
 
 ---
 
+## 🔌 Power Considerations
+
+![PaperDash_Hardware_back](paperdash_hw_back.jpeg)
+
+PaperDash is designed for 24/7 low-power operation with a single-cable setup.
+
+- The Raspberry Pi Zero WH is powered via a PoE HAT (IEEE 802.3af compliant), eliminating the need for a separate USB power supply.
+- Typical system current draw is ~160–250mA @ 5V depending on screen refresh activity and ambient temperature.
+- The 7.5" Waveshare e-paper display consumes power only during updates, making it ideal for passive, always-on dashboards.
+- PoE provides both power and Ethernet connectivity, which simplifies wiring and improves reliability for long-term deployments.
+- No active cooling is required; the system operates reliably in ambient indoor temperatures (<40°C) under passive ventilation.
+
+> ⚠️ Note: Make sure your PoE injector or switch delivers at least 5V/2.5A via a compatible step-down HAT for stable operation.
+
+---
+
 ## 📦 Project Structure
 
 ```
@@ -118,8 +134,6 @@ See [LICENSE](LICENSE) for details.
 
 ## 👥 Credits
 
-This project was designed and implemented collaboratively by  
-**Edward Lin** and **ChatGPT (OpenAI)** in 2025.
+This project was developed by **Edward Lin** in collaboration with **ChatGPT (OpenAI)**, using iterative design, hardware validation, and hands-on testing.
 
-All code was written from scratch and iteratively refined through interactive development, testing, and hardware validation.
-
+All code was written from scratch and optimized through continuous refinement.
