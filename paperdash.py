@@ -2,8 +2,10 @@
 
 import sys
 import time
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
+from typing import Dict, Optional
+
+from PIL import Image, ImageDraw, ImageFont
 
 sys.path.append('./epd')
 from epd7in5_V2 import EPD
@@ -21,85 +23,42 @@ SCHEDULE = [
     ("Friday", "15:30", "pilates"),
 ]
 
-ICON_WIDTH = 80
-ICON_HEIGHT = 40
-ROW_HEIGHT = 70
-
-
-def draw_rollerblade(draw: ImageDraw.Draw, x: int, y: int) -> None:
-    boot_body = (x + 10, y + 8, x + 46, y + 28)
-    boot_cuff = (x + 20, y + 2, x + 38, y + 12)
-    draw.rectangle(boot_body, outline=0, fill=255)
-    draw.rectangle(boot_cuff, outline=0, fill=255)
-    draw.rectangle((x + 18, y + 14, x + 38, y + 18), fill=0)
-    draw.ellipse((x + 12, y + 26, x + 24, y + 38), outline=0, fill=255)
-    draw.ellipse((x + 32, y + 26, x + 44, y + 38), outline=0, fill=255)
-    draw.ellipse((x + 48, y + 30, x + 58, y + 36), outline=0, fill=255)
-
-
-def draw_magic(draw: ImageDraw.Draw, x: int, y: int) -> None:
-    hat_top = (x + 20, y + 6, x + 60, y + 22)
-    hat_brim = (x + 12, y + 22, x + 68, y + 28)
-    wand = [(x + 60, y + 4), (x + 74, y + 28)]
-    sparkles = [
-        (x + 70, y + 6, x + 72, y + 8),
-        (x + 72, y + 10, x + 74, y + 12),
-        (x + 68, y + 12, x + 70, y + 14),
-    ]
-    draw.rectangle(hat_top, outline=0, fill=255)
-    draw.rectangle(hat_brim, fill=0)
-    draw.line(wand, fill=0, width=2)
-    for sparkle in sparkles:
-        draw.rectangle(sparkle, fill=0)
-
-
-def draw_gymnastics(draw: ImageDraw.Draw, x: int, y: int) -> None:
-    head = (x + 36, y + 4, x + 44, y + 12)
-    torso = [(x + 40, y + 12), (x + 40, y + 28)]
-    arms = [(x + 20, y + 20), (x + 60, y + 14)]
-    leg_left = [(x + 40, y + 28), (x + 24, y + 38)]
-    leg_right = [(x + 40, y + 28), (x + 56, y + 38)]
-    draw.ellipse(head, outline=0, fill=255)
-    draw.line(torso, fill=0, width=2)
-    draw.line(arms, fill=0, width=2)
-    draw.line(leg_left, fill=0, width=2)
-    draw.line(leg_right, fill=0, width=2)
-
-
-def draw_blocks(draw: ImageDraw.Draw, x: int, y: int) -> None:
-    base_block = (x + 8, y + 24, x + 68, y + 36)
-    mid_block = (x + 20, y + 16, x + 56, y + 28)
-    top_block = (x + 32, y + 8, x + 44, y + 20)
-    draw.rectangle(base_block, outline=0, fill=255)
-    draw.rectangle(mid_block, outline=0, fill=255)
-    draw.rectangle(top_block, outline=0, fill=255)
-    draw.line((x + 8, y + 36, x + 68, y + 36), fill=0)
-
-
-def draw_pilates(draw: ImageDraw.Draw, x: int, y: int) -> None:
-    mat = (x + 6, y + 28, x + 74, y + 34)
-    head = (x + 18, y + 16, x + 26, y + 24)
-    torso = [(x + 26, y + 20), (x + 54, y + 24)]
-    legs = [(x + 54, y + 24), (x + 68, y + 18)]
-    draw.rectangle(mat, fill=0)
-    draw.ellipse(head, outline=0, fill=255)
-    draw.line(torso, fill=0, width=2)
-    draw.line(legs, fill=0, width=2)
-
-
-ICON_DRAWERS = {
-    "rollerblade": draw_rollerblade,
-    "magic": draw_magic,
-    "gymnastics": draw_gymnastics,
-    "blocks": draw_blocks,
-    "pilates": draw_pilates,
+ICON_FILES = {
+    "rollerblade": "assets/pickup_icons/rollerblade.bmp",
+    "magic": "assets/pickup_icons/magic.bmp",
+    "gymnastics": "assets/pickup_icons/gymnastics.bmp",
+    "blocks": "assets/pickup_icons/blocks.bmp",
+    "pilates": "assets/pickup_icons/pilates.bmp",
 }
 
+ICON_SIZE = (64, 64)  # width, height in pixels for the schedule bitmaps
+ROW_HEIGHT = 72
+SCHEDULE_RIGHT_MARGIN = 6
+SCHEDULE_BOTTOM_MARGIN = 10
+ICON_TEXT_GAP = 4  # tightened spacing between the time text and icon
 
-def draw_icon(draw: ImageDraw.Draw, name: str, x: int, y: int) -> None:
-    drawer = ICON_DRAWERS.get(name)
-    if drawer:
-        drawer(draw, x, y)
+
+_ICON_CACHE: Dict[str, Optional[Image.Image]] = {}
+
+
+def load_icon(name: str) -> Optional[Image.Image]:
+    path = ICON_FILES.get(name)
+    if not path:
+        return None
+
+    if path not in _ICON_CACHE:
+        try:
+            icon = Image.open(path)
+            if icon.size != ICON_SIZE:
+                icon = icon.resize(ICON_SIZE, Image.NEAREST)
+            if icon.mode != '1':
+                icon = icon.convert('1')
+            _ICON_CACHE[path] = icon
+        except Exception as exc:
+            print(f"[WARN] Failed to load icon '{name}' from '{path}': {exc}")
+            _ICON_CACHE[path] = None
+
+    return _ICON_CACHE[path]
 
 def main():
     config = load_config()
@@ -167,16 +126,33 @@ def main():
 
                 # Schedule section
                 schedule_height = ROW_HEIGHT * len(SCHEDULE)
-                y_pos = height - schedule_height - 10
+                y_pos = height - schedule_height - SCHEDULE_BOTTOM_MARGIN
+                icon_x = width - ICON_SIZE[0] - SCHEDULE_RIGHT_MARGIN
+
                 for day, pickup_time, icon_name in SCHEDULE:
                     text = f"{day}  {pickup_time}"
                     text_w, text_h = draw.textsize(text, font=font_medium)
-                    icon_x = width - ICON_WIDTH - 10
-                    text_x = max(10, icon_x - 10 - text_w)
+                    text_x = max(10, icon_x - ICON_TEXT_GAP - text_w)
                     text_y = y_pos + (ROW_HEIGHT - text_h) // 2
-                    icon_y = y_pos + (ROW_HEIGHT - ICON_HEIGHT) // 2
+                    icon_y = y_pos + (ROW_HEIGHT - ICON_SIZE[1]) // 2
+
                     draw.text((text_x, text_y), text, font=font_medium, fill=0)
-                    draw_icon(draw, icon_name, icon_x, icon_y)
+
+                    icon_image = load_icon(icon_name)
+                    if icon_image:
+                        image.paste(icon_image, (icon_x, icon_y))
+                    else:
+                        draw.rectangle(
+                            (
+                                icon_x,
+                                icon_y,
+                                icon_x + ICON_SIZE[0],
+                                icon_y + ICON_SIZE[1],
+                            ),
+                            outline=0,
+                            fill=255,
+                        )
+
                     y_pos += ROW_HEIGHT
 
                 epd.display_Partial(epd.getbuffer(image), *PARTIAL_REGION)
