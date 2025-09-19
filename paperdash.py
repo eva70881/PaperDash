@@ -10,16 +10,21 @@ from epd7in5_V2 import EPD
 
 from modules.config import load_config
 from modules.network import get_ip_address
-from modules.clock import get_current_time
 from modules.weather import get_weather_summary
-from modules.stocks import get_stock_summary
+
+# Fixed pickup schedule for Monday through Friday
+SCHEDULE = [
+    ("Monday", "Pick up at 17:00"),
+    ("Tuesday", "Pick up at 17:00"),
+    ("Wednesday", "Pick up at 16:30"),
+    ("Thursday", "Pick up at 17:30"),
+    ("Friday", "Pick up at 15:30"),
+]
 
 def main():
     config = load_config()
     weather_interval = config["weather_update_interval"]
-    stock_interval = config["stock_update_interval"]
     logo_path = config["logo_path"]
-    stock_symbols = config.get("stocks", [])
 
     epd = EPD()
     epd.init()
@@ -39,9 +44,7 @@ def main():
 
     last_minute = ""
     last_weather_update = ""
-    last_stock_update = ""
     weather_text = "Weather: --"
-    stock_texts = {symbol: f"{symbol:<4}:   --" for symbol in stock_symbols}
 
     try:
         logo = Image.open(logo_path)
@@ -63,11 +66,6 @@ def main():
                 weather_text = get_weather_summary()
                 last_weather_update = current_minute
 
-            if int(now_full.minute) % stock_interval == 0 and current_minute != last_stock_update:
-                for symbol in stock_symbols:
-                    stock_texts[symbol] = get_stock_summary(symbol)
-                last_stock_update = current_minute
-
             if current_minute != last_minute:
                 draw.rectangle(PARTIAL_REGION, fill=255)
 
@@ -87,10 +85,11 @@ def main():
                 if logo:
                     image.paste(logo, (10, height - logo_h - 10))
 
-                # Stock section
-                y_pos = height - 30 * len(stock_symbols) - 10
-                for symbol in stock_symbols:
-                    text = stock_texts[symbol]
+                # Schedule section
+                schedule_height = 30 * len(SCHEDULE)
+                y_pos = height - schedule_height - 10
+                for day, pickup in SCHEDULE:
+                    text = f"{day}: {pickup}"
                     text_w, _ = draw.textsize(text, font=font_medium)
                     draw.text((width - text_w - 10, y_pos), text, font=font_medium, fill=0)
                     y_pos += 30
