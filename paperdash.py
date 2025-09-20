@@ -3,6 +3,7 @@
 import sys
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, Optional
 
 from PIL import Image, ImageDraw, ImageFont
@@ -40,6 +41,15 @@ ICON_TEXT_GAP = 4  # tightened spacing between the time text and icon
 
 _ICON_CACHE: Dict[str, Optional[Image.Image]] = {}
 
+WEATHER_ICON_FILES = {
+    "sunny": "assets/weather_icons/sunny.bmp",
+    "cloudly": "assets/weather_icons/cloudly.bmp",
+    "raining": "assets/weather_icons/raining.bmp",
+    "snow": "assets/weather_icons/snow.bmp",
+}
+
+_WEATHER_ICON_CACHE: Dict[str, Optional[Image.Image]] = {}
+
 
 def load_icon(name: str) -> Optional[Image.Image]:
     path = ICON_FILES.get(name)
@@ -59,6 +69,29 @@ def load_icon(name: str) -> Optional[Image.Image]:
             _ICON_CACHE[path] = None
 
     return _ICON_CACHE[path]
+
+
+def load_weather_icon(category: str) -> Optional[Image.Image]:
+    path = WEATHER_ICON_FILES.get(category)
+    if not path:
+        return None
+
+    if path not in _WEATHER_ICON_CACHE:
+        icon_path = Path(path)
+        if not icon_path.exists():
+            print(f"[INFO] Weather icon '{category}' not found at '{path}'. Using logo fallback.")
+            _WEATHER_ICON_CACHE[path] = None
+        else:
+            try:
+                icon = Image.open(path)
+                if icon.mode != '1':
+                    icon = icon.convert('1')
+                _WEATHER_ICON_CACHE[path] = icon
+            except Exception as exc:
+                print(f"[WARN] Failed to load weather icon '{category}' from '{path}': {exc}")
+                _WEATHER_ICON_CACHE[path] = None
+
+    return _WEATHER_ICON_CACHE[path]
 
 def main():
     config = load_config()
@@ -83,17 +116,17 @@ def main():
 
     last_minute = ""
     last_weather_update = ""
-    weather_text = "Weather: --"
+    weather_text = "--°C | RH --%"
 
     try:
         logo = Image.open(logo_path)
         if logo.mode != '1':
             logo = logo.convert('1')
-        logo_w, logo_h = logo.size
     except Exception as e:
         print("[WARN] Failed to load logo:", e)
         logo = None
-        logo_w, logo_h = 0, 0
+
+    weather_image: Optional[Image.Image] = logo
 
     try:
         while True:
@@ -102,7 +135,9 @@ def main():
             current_minute = now_full.strftime('%Y%m%d%H%M')
 
             if int(now_full.minute) % weather_interval == 0 and current_minute != last_weather_update:
-                weather_text = get_weather_summary()
+                weather_text, weather_category = get_weather_summary()
+                weather_candidate = load_weather_icon(weather_category)
+                weather_image = weather_candidate if weather_candidate else logo
                 last_weather_update = current_minute
 
             if current_minute != last_minute:
@@ -118,11 +153,14 @@ def main():
                 # Top content
                 draw.text(((width - ip_label_w) // 2, 20), ip_label, font=font_small, fill=0)
                 draw.text(((width - time_w) // 2, 60), now_str, font=font_large, fill=0)
-                draw.text(((width - weather_w) // 2, 120), weather_text, font=font_medium, fill=0)
+                left_region_width = width // 2
+                weather_x = max(0, (left_region_width - weather_w) // 2)
+                draw.text((weather_x, 120), weather_text, font=font_medium, fill=0)
 
                 # Logo
-                if logo:
-                    image.paste(logo, (10, height - logo_h - 10))
+                if weather_image:
+                    weather_wi, weather_hi = weather_image.size
+                    image.paste(weather_image, (10, height - weather_hi - 10))
 
                 # Schedule section
                 schedule_height = ROW_HEIGHT * len(SCHEDULE)
