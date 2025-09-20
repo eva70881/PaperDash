@@ -2,24 +2,68 @@
 
 import sys
 import time
-from PIL import Image, ImageDraw, ImageFont
 from datetime import datetime
+from typing import Dict, Optional
+
+from PIL import Image, ImageDraw, ImageFont
 
 sys.path.append('./epd')
 from epd7in5_V2 import EPD
 
 from modules.config import load_config
 from modules.network import get_ip_address
-from modules.clock import get_current_time
 from modules.weather import get_weather_summary
-from modules.stocks import get_stock_summary
+
+# Fixed pickup schedule for Monday through Friday with icon descriptors
+SCHEDULE = [
+    ("Monday", "17:00", "rollerblade"),
+    ("Tuesday", "17:00", "magic"),
+    ("Wednesday", "16:30", "gymnastics"),
+    ("Thursday", "17:30", "blocks"),
+    ("Friday", "15:30", "pilates"),
+]
+
+ICON_FILES = {
+    "rollerblade": "assets/pickup_icons/rollerblade.bmp",
+    "magic": "assets/pickup_icons/magic.bmp",
+    "gymnastics": "assets/pickup_icons/gymnastics.bmp",
+    "blocks": "assets/pickup_icons/blocks.bmp",
+    "pilates": "assets/pickup_icons/pilates.bmp",
+}
+
+ICON_SIZE = (64, 64)  # width, height in pixels for the schedule bitmaps
+ROW_HEIGHT = 72
+SCHEDULE_RIGHT_MARGIN = 6
+SCHEDULE_BOTTOM_MARGIN = 10
+ICON_TEXT_GAP = 4  # tightened spacing between the time text and icon
+
+
+_ICON_CACHE: Dict[str, Optional[Image.Image]] = {}
+
+
+def load_icon(name: str) -> Optional[Image.Image]:
+    path = ICON_FILES.get(name)
+    if not path:
+        return None
+
+    if path not in _ICON_CACHE:
+        try:
+            icon = Image.open(path)
+            if icon.size != ICON_SIZE:
+                icon = icon.resize(ICON_SIZE, Image.NEAREST)
+            if icon.mode != '1':
+                icon = icon.convert('1')
+            _ICON_CACHE[path] = icon
+        except Exception as exc:
+            print(f"[WARN] Failed to load icon '{name}' from '{path}': {exc}")
+            _ICON_CACHE[path] = None
+
+    return _ICON_CACHE[path]
 
 def main():
     config = load_config()
     weather_interval = config["weather_update_interval"]
-    stock_interval = config["stock_update_interval"]
     logo_path = config["logo_path"]
-    stock_symbols = config.get("stocks", [])
 
     epd = EPD()
     epd.init()
@@ -39,9 +83,7 @@ def main():
 
     last_minute = ""
     last_weather_update = ""
-    last_stock_update = ""
     weather_text = "Weather: --"
-    stock_texts = {symbol: f"{symbol:<4}:   --" for symbol in stock_symbols}
 
     try:
         logo = Image.open(logo_path)
@@ -63,11 +105,6 @@ def main():
                 weather_text = get_weather_summary()
                 last_weather_update = current_minute
 
-            if int(now_full.minute) % stock_interval == 0 and current_minute != last_stock_update:
-                for symbol in stock_symbols:
-                    stock_texts[symbol] = get_stock_summary(symbol)
-                last_stock_update = current_minute
-
             if current_minute != last_minute:
                 draw.rectangle(PARTIAL_REGION, fill=255)
 
@@ -87,13 +124,36 @@ def main():
                 if logo:
                     image.paste(logo, (10, height - logo_h - 10))
 
-                # Stock section
-                y_pos = height - 30 * len(stock_symbols) - 10
-                for symbol in stock_symbols:
-                    text = stock_texts[symbol]
-                    text_w, _ = draw.textsize(text, font=font_medium)
-                    draw.text((width - text_w - 10, y_pos), text, font=font_medium, fill=0)
-                    y_pos += 30
+                # Schedule section
+                schedule_height = ROW_HEIGHT * len(SCHEDULE)
+                y_pos = height - schedule_height - SCHEDULE_BOTTOM_MARGIN
+                icon_x = width - ICON_SIZE[0] - SCHEDULE_RIGHT_MARGIN
+
+                for day, pickup_time, icon_name in SCHEDULE:
+                    text = f"{day}  {pickup_time}"
+                    text_w, text_h = draw.textsize(text, font=font_medium)
+                    text_x = max(10, icon_x - ICON_TEXT_GAP - text_w)
+                    text_y = y_pos + (ROW_HEIGHT - text_h) // 2
+                    icon_y = y_pos + (ROW_HEIGHT - ICON_SIZE[1]) // 2
+
+                    draw.text((text_x, text_y), text, font=font_medium, fill=0)
+
+                    icon_image = load_icon(icon_name)
+                    if icon_image:
+                        image.paste(icon_image, (icon_x, icon_y))
+                    else:
+                        draw.rectangle(
+                            (
+                                icon_x,
+                                icon_y,
+                                icon_x + ICON_SIZE[0],
+                                icon_y + ICON_SIZE[1],
+                            ),
+                            outline=0,
+                            fill=255,
+                        )
+
+                    y_pos += ROW_HEIGHT
 
                 epd.display_Partial(epd.getbuffer(image), *PARTIAL_REGION)
                 last_minute = current_minute
