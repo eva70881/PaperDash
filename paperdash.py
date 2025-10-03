@@ -42,10 +42,18 @@ ICON_TEXT_GAP = 4  # tightened spacing between the time text and icon
 _ICON_CACHE: Dict[str, Optional[Image.Image]] = {}
 
 WEATHER_ICON_FILES = {
-    "sunny": "assets/weather_icons/sunny.bmp",
-    "cloudly": "assets/weather_icons/cloudly.bmp",
-    "raining": "assets/weather_icons/raining.bmp",
+    "clear": "assets/weather_icons/clear.bmp",
+    "mostly_clear": "assets/weather_icons/mostly_clear.bmp",
+    "partly_cloudy": "assets/weather_icons/partly_cloudy.bmp",
+    "cloudy": "assets/weather_icons/cloudy.bmp",
+    "fog": "assets/weather_icons/fog.bmp",
+    "rime_fog": "assets/weather_icons/rime_fog.bmp",
+    "drizzle": "assets/weather_icons/drizzle.bmp",
+    "light_rain": "assets/weather_icons/light_rain.bmp",
+    "rain": "assets/weather_icons/rain.bmp",
+    "heavy_rain": "assets/weather_icons/heavy_rain.bmp",
     "snow": "assets/weather_icons/snow.bmp",
+    "rain_showers": "assets/weather_icons/rain_showers.bmp",
 }
 
 _WEATHER_ICON_CACHE: Dict[str, Optional[Image.Image]] = {}
@@ -160,7 +168,9 @@ def main():
                 # Logo
                 if weather_image:
                     weather_wi, weather_hi = weather_image.size
-                    image.paste(weather_image, (10, height - weather_hi - 10))
+                    left_region_width = width // 2
+                    weather_icon_x = max(0, (left_region_width - weather_wi) // 2)
+                    image.paste(weather_image, (weather_icon_x, height - weather_hi - 10))
 
                 # Schedule section
                 schedule_height = ROW_HEIGHT * len(SCHEDULE)
