@@ -104,6 +104,18 @@ git clone https://github.com/yourname/PaperDash.git
 cd PaperDash
 ```
 
+### 🖼️ Convert PNG logos to BMP
+
+Use the helper script to convert PNG images into BMP logos that match your display:
+
+```bash
+python3 tools/png_to_bmp.py input.png output.bmp --width 400 --height 200
+```
+
+- Omit `--width` and `--height` to keep the original image size.
+- Provide only one dimension to scale the other proportionally.
+- Requires the [Pillow](https://python-pillow.org/) package (installed with `python3-pil`).
+
 ---
 
 ## 🖼️ Setting Up Waveshare Driver
