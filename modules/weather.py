@@ -24,19 +24,19 @@ WEATHER_TEXT_MAP = {
 }
 
 WEATHER_CATEGORY_MAP = {
-    0: "sunny",
-    1: "sunny",
-    2: "sunny",
-    3: "cloudly",
-    45: "cloudly",
-    48: "cloudly",
-    51: "raining",
-    53: "raining",
-    61: "raining",
-    63: "raining",
-    65: "raining",
+    0: "clear",
+    1: "mostly_clear",
+    2: "partly_cloudy",
+    3: "cloudy",
+    45: "fog",
+    48: "rime_fog",
+    51: "drizzle",
+    53: "drizzle",
+    61: "light_rain",
+    63: "rain",
+    65: "heavy_rain",
     71: "snow",
-    80: "raining",
+    80: "rain_showers",
 }
 
 
