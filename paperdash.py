@@ -127,7 +127,7 @@ def main():
     last_weather_update = ""
     last_system_update = ""
     weather_text = "--°C | RH --%"
-    system_usage_text = "CPU --% | MEM --% | DRIVE --%"
+    system_usage_text = "CPU --% - MEM --% - DRIVE --%"
 
     try:
         logo = Image.open(logo_path)
@@ -154,7 +154,7 @@ def main():
             if int(now_full.minute) % weather_interval == 0 and current_minute != last_system_update:
                 cpu_percent, memory_percent, drive_percent = get_system_usage()
                 system_usage_text = (
-                    f"CPU {cpu_percent:.0f}% | MEM {memory_percent:.0f}% | DRIVE {drive_percent:.0f}%"
+                    f"CPU {cpu_percent:.0f}% - MEM {memory_percent:.0f}% - DRIVE {drive_percent:.0f}%"
                 )
                 last_system_update = current_minute
 
@@ -162,25 +162,17 @@ def main():
                 draw.rectangle(PARTIAL_REGION, fill=255)
 
                 ip = get_ip_address()
-                ip_label = f"Paper Dash - IP Address: {ip}"
+                top_label = f"Paper Dash - {ip} - {system_usage_text}"
 
-                ip_label_w, _ = draw.textsize(ip_label, font=font_small)
+                top_label_w, _ = draw.textsize(top_label, font=font_small)
                 time_w, time_h = draw.textsize(now_str, font=font_large)
                 weather_w, _  = draw.textsize(weather_text, font=font_medium)
-                system_w, system_h = draw.textsize(system_usage_text, font=font_medium)
 
                 # Top content
-                draw.text(((width - ip_label_w) // 2, 20), ip_label, font=font_small, fill=0)
-                time_x = 20
+                draw.text(((width - top_label_w) // 2, 20), top_label, font=font_small, fill=0)
+                time_x = (width - time_w) // 2
                 time_y = 60
                 draw.text((time_x, time_y), now_str, font=font_large, fill=0)
-
-                system_x = time_x + time_w + 30
-                max_system_x = width - system_w - 20
-                if system_x > max_system_x:
-                    system_x = max_system_x
-                system_y = time_y + max(0, (time_h - system_h) // 2)
-                draw.text((system_x, system_y), system_usage_text, font=font_medium, fill=0)
                 left_region_width = width // 2
                 weather_x = max(0, (left_region_width - weather_w) // 2)
                 draw.text((weather_x, 120), weather_text, font=font_medium, fill=0)
