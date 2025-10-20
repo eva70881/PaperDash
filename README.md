@@ -136,6 +136,62 @@ python3 paperdash.py
 
 ---
 
+## 🐳 Run with Docker
+
+The project includes a container image so you can ship PaperDash with all of its
+Python and system dependencies bundled together.
+
+### 1. Build the image
+
+```bash
+docker build -t paperdash .
+```
+
+### 2. Mount your assets and expose hardware devices
+
+PaperDash still reads fonts, configuration, and bitmaps from the `assets/`
+folder. Mount the directory from the host so that you can edit assets without
+rebuilding the image:
+
+```bash
+docker run \
+  --rm \
+  --name paperdash \
+  --device /dev/spidev0.0 \
+  --device /dev/spidev0.1 \
+  --device /dev/gpiomem \
+  -v $(pwd)/assets:/app/assets:ro \
+  paperdash
+```
+
+> 💡 Run the container on the Raspberry Pi so the SPI and GPIO devices are
+> available. Remove the `:ro` suffix if you want to update configuration files
+> from inside the container.
+
+### 3. Optional: docker-compose
+
+Create a `docker-compose.yml` next to the repository for repeatable deployment:
+
+```yaml
+services:
+  paperdash:
+    image: paperdash
+    restart: unless-stopped
+    devices:
+      - "/dev/spidev0.0:/dev/spidev0.0"
+      - "/dev/spidev0.1:/dev/spidev0.1"
+      - "/dev/gpiomem:/dev/gpiomem"
+    volumes:
+      - ./assets:/app/assets:ro
+```
+
+Start it with `docker compose up -d` after building the image.
+
+> ℹ️ If you need to tweak fonts or add Python modules, rebuild the image with
+> `docker build --pull -t paperdash .` so dependencies stay up to date.
+
+---
+
 ## 📜 License
 
 MIT License  
