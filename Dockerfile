@@ -6,9 +6,6 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        python3-gpiozero \
-        python3-rpi.gpio \
-        python3-spidev \
         fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
