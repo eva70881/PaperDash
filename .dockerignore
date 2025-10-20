@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.swp
+*.swo
+.env
+.venv
+.git
+.gitignore
+paperdash_hw.jpeg
+paperdash_hw_back.jpeg
