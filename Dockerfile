@@ -1,5 +1,4 @@
-# syntax=docker/dockerfile:1
-FROM python:3.11-slim AS runtime
+FROM balenalib/raspberry-pi-debian-python:3.11-bullseye-run AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
